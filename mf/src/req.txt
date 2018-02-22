@@ -1,0 +1,2 @@
+mysql-connector==2.1.6
+pylast>=2.0.0
