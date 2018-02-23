@@ -1,4 +1,5 @@
 #import json
+import math
 import re
 import pylast
 import argparse
@@ -15,6 +16,7 @@ from collections import defaultdict
 #}
 
 N          = 10
+topperiod  = '1month'
 taglimit   = 5
 user       = 'leperboi'
 playlist   = []
@@ -29,7 +31,7 @@ network = pylast.LastFMNetwork(api_key=API_KEY, api_secret=API_SECRET)
 userobj = network.get_user(user)
 #library = pylast.Library(user=user,network=network)
 
-topArt  = userobj.get_top_artists(period='overall', limit=N)
+topArt  = userobj.get_top_artists(period=topperiod, limit=N)
 recent  = userobj.get_recent_tracks(limit=N)
 
 tags    = defaultdict(float)
@@ -72,15 +74,34 @@ for k,v in sorted(tags.items()):
     if re.match(".* count$", k):
         pass
     else:
+        f.write(str(k)+' : '+str(v))
         tag = network.get_tag(k)
         for art in tag.get_top_artists(limit=15):
-            if any(art.item.name == x.item.name for x in simart) or \
-               any(art.item.name == x.item.artist for x in simtrk):
-                continue
-            tagcount = 0
+            #if any(art.item.name == x.item.name for x in simart) or \
+            #   any(art.item.name == x.item.artist for x in simtrk):
+            #    continue
+            tagscore = 0
             for at in art.item.get_top_tags(limit=taglimit):
                 if at.item.name in tags.keys():
-                    tagcount += tags[at.item.name]
+                    tagscore += tags[at.item.name]
+            if tagscore >= math.ceil(taglimit/2):
+                simart += art
+
+print('hello')
+for i in simart:
+    if not any(i.item.name == x.item.name for x in topArt):
+        f.write(str(i.item.name))
+        print(str(i.item.name))
+    else:
+        f.write('X '+str(i.item.name))
+        print('X '+str(i.item.name))
+for i in simtrk:
+    if not any(i.item== x.track for x in recent):
+        f.write(str(i.item.name))
+        print(str(i.item.name))
+    else:
+        f.write('X '+str(i.item.name))
+        print('X '+str(i.item.name))
 
 #try:
 #    con = mysql.connector.connect(**config)
