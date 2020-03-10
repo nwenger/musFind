@@ -15,6 +15,8 @@ from collections import defaultdict
 #    'database' : 'mdb'
 #}
 
+print('[LOG] Initializing')
+
 N          = 50
 topperiod  = '1month'
 taglimit   = 5
@@ -44,6 +46,7 @@ for i in range(0,N-1):
     #parallelize A
     if len(topArt) >= i:
         #weight check
+        #FIXME Nones probably coming from here
         simart += [ a.item for a in topArt[i].item.get_similar() \
                     if not any(a.item.name == x.item.name for x in allArt) ]
         for at in topArt[i].item.get_top_tags(limit=taglimit):
@@ -77,6 +80,7 @@ for k,v in sorted(tags.items()):
         tags.pop(k)
         tags.pop(k+' count')
 
+log.write('\n')
 for k,v in sorted(tags.items()):
     if re.match(".* count$", k):
         pass
@@ -93,69 +97,81 @@ for k,v in sorted(tags.items()):
                     tagscore += tags[at.item.name]
             if tagscore >= 0:#math.ceil(taglimit/2):
                 #FIXME inconsistent typing in simart
-                simart += art
+                if art is None:
+                    print('[WRN] Adding None to simart caught A')
+                else:
+                    simart += art
 
-print('\n=== Finished retrieving similar artists ===\n')
+print('\n\n=== Finished retrieving similar artists ===\n')
 
 print('\n=== simart ===\n')
 #parallelize B
 #TODO check for 0x90 "nil state"
 for i in simart:
     try:
+        if i is None:
+           print('[WRN] Bad value in simart')
+           continue
         if any(i.name == x.item.name for x in allArt):
             #log.write('XX '+str(i.item.name))
             #print('XX '+str(i.item.name))
-            continue
-        if not any(i.name == x.item.name for x in topArt):
-            log.write(str(i.name))
-            print(str(i.name))
-        else:
             pass
-            #log.write('X '+str(i.item.name))
-            #print('X '+str(i.item.name))
+        elif not any(i.name == x.item.name for x in topArt):
+            log.write(str(i.name)+'\n')
+            print(str(i.name))
+        #else:
+        #    pass
+        #    #log.write('X '+str(i.item.name))
+        #    #print('X '+str(i.item.name))
     except AttributeError:
         print('[LOG] Wrong var type, retrying...')
         try:
             if any(i.item.name == x.item.name for x in allArt):
                 continue
             if not any(i.item.name == x.item.name for x in topArt):
-                log.write(str(i.item.name))
+                log.write(str(i.item.name)+'\n')
                 print(str(i.item.name))
             print('[LOG] Retry successful')
         except AttributeError:
             print('[ERR] I give up : '+str(i))
+        except UnicodeEncodeError:
+            print('[ERR] Unicode Error A')
+    except UnicodeEncodeError:
+        print('[ERR] Unicode Error B')
 print('\n=== simtrk ===\n')
 #parallelize B
 for i in simtrk:
     try:
-        if any(i.item.artist == x.item.name for x in allArt):
-            #log.write('XX '+str(i.item.name))
-            #print('XX '+str(i.item.name))
+        if any(i.item.artist.name == x.item.name for x in allArt):
+            #log.write('XX '+str(i.name))
+            #print('XX '+str(i.name))
             pass
         elif not any(i.item.name == x.track.name for x in recent):
-            log.write(str(i.item.name))
+            log.write(str(i.item.name)+'\n')
             print(str(i.item.name))
-        else:
-            pass
-            #log.write('X '+str(i.item.name))
-            #print('X '+str(i.item.name))
+        #else:
+        #    #log.write('X '+str(i.item.name))
+        #    #print('X '+str(i.item.name))
     except AttributeError:
         print('[LOG] Wrong var type, retrying...')
         try:
-            if any(i.artist == x.item.name for x in allArt):
-                #log.write('XX '+str(i.name))
-                #print('XX '+str(i.name))
+            if any(i.item.artist== x.item.name for x in allArt):
+                #log.write('XX '+str(i.item.name))
+                #print('XX '+str(i.item.name))
                 pass
-            elif not any(i.name == x.track.name for x in recent):
-                log.write(str(i.name))
-                print(str(i.name))
-            else:
-                pass
-                #log.write('X '+str(i.item.name))
-                #print('X '+str(i.item.name))
-            print('[LOG] Retry successful')
+            elif not any(i.item.name == x.track.name for x in recent):
+                log.write(str(i.item.name)+'\n')
+                print(str(i.item.name))
+            #else:
+            #    pass
+            #    #log.write('X '+str(i.item.name))
+            #    #print('X '+str(i.item.name))
         except AttributeError:
             print('[ERR] I give up : '+str(i))
+        except UnicodeEncodeError:
+            print('[ERR] Unicode Error C')
+    except UnicodeEncodeError:
+        print('[ERR] Unicode Error D')
 
 #try:
 #    con = mysql.connector.connect(**config)
@@ -176,5 +192,5 @@ for i in simtrk:
 #    log.write('nice')
 #    con.close()
 
-log.write('[LOG] Finished')
+log.write('\n[LOG] Finished')
 log.close()
